@@ -22,6 +22,9 @@
     "name": "psychobunny",
     "email": "psycho.bunny@hotmail.com"
   },
+  "nbbpm": {
+    "index": false
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/psychobunny/nodebb-plugin-import-jforum/issues"
