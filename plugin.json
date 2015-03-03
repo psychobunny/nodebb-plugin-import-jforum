@@ -1,7 +1,7 @@
 {
     	"id": "nodebb-plugin-import-jforum",
     	"name": "nodebb-plugin-import-jforum",
-    	"description": "A phpBB2 to NodeBB data exporter compatible with nodebb-plugin-ismport",
+    	"description": "A JForum to NodeBB data exporter compatible with nodebb-plugin-import",
     	"url": "https://github.com/psychobunny/nodebb-plugin-import-jforum",
 	"library": "./admin/index.js",
 	"hooks": [
