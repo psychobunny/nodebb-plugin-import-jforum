@@ -174,7 +174,6 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             // and there is the content I need !!
             + prefix + 'topics.topic_title as _title, '
             + prefix + 'posts_text.post_text as _content '
-
             + 'FROM ' + prefix + 'topics, ' + prefix + 'posts, ' + prefix + 'posts_text '
             // see
             + 'WHERE ' + prefix + 'topics.topic_first_post_id=' + prefix + 'posts.post_id '
@@ -207,21 +206,21 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             });
     };
 
-	var getTopicsMainPids = function(callback) {
-		if (Exporter._topicsMainPids) {
-			return callback(null, Exporter._topicsMainPids);
-		}
-		Exporter.getPaginatedTopics(0, -1, function(err, topicsMap) {
-			if (err) return callback(err);
+    var getTopicsMainPids = function(callback) {
+        if (Exporter._topicsMainPids) {
+            return callback(null, Exporter._topicsMainPids);
+        }
+        Exporter.getPaginatedTopics(0, -1, function(err, topicsMap) {
+            if (err) return callback(err);
 
-			Exporter._topicsMainPids = {};
-			Object.keys(topicsMap).forEach(function(_tid) {
-				var topic = topicsMap[_tid];
-				Exporter._topicsMainPids[topic.topic_first_post_id] = topic._tid;
-			});
-			callback(null, Exporter._topicsMainPids);
-		});
-	};
+            Exporter._topicsMainPids = {};
+            Object.keys(topicsMap).forEach(function(_tid) {
+                var topic = topicsMap[_tid];
+                Exporter._topicsMainPids[topic.topic_first_post_id] = topic._tid;
+            });
+            callback(null, Exporter._topicsMainPids);
+        });
+    };
     Exporter.getPosts = function(callback) {
         return Exporter.getPaginatedPosts(0, -1, callback);
     };
@@ -236,18 +235,13 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             //+ 'POST_PARENT_ID as _post_replying_to, ' phpbb doesn't have "reply to another post"
             + prefix + 'posts.topic_id as _tid, '
             + prefix + 'posts.post_time as _timestamp, '
-            // not being used
-            + prefix + 'posts.post_subject as _subject, '
 
-            + prefix + 'posts.post_text as _content, '
+            + prefix + 'posts_text.post_text as _content, '
             + prefix + 'posts.poster_id as _uid, '
 
-            // maybe use this one to skip
-            + prefix + 'posts.post_approved as _approved '
+            + 'FROM ' + prefix + 'posts, ' + prefix + 'posts_text '
 
-            + 'FROM ' + prefix + 'posts '
-
-		    // the ones that are topics main posts are filtered below
+            // the ones that are topics main posts are filtered below
             + 'WHERE ' + prefix + 'posts.topic_id > 0 '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
@@ -257,27 +251,27 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             return callback(err);
         }
 
-		Exporter.connection.query(query,
-			function (err, rows) {
-				if (err) {
-					Exporter.error(err);
-					return callback(err);
-				}
-				getTopicsMainPids(function(err, mpids) {
-					//normalize here
-					var map = {};
-					rows.forEach(function (row) {
-						// make it's not a topic
-						if (! mpids[row._pid]) {
-							row._content = row._content || '';
-							row._timestamp = ((row._timestamp || 0) * 1000) || startms;
-							map[row._pid] = row;
-						}
-					});
+        Exporter.connection.query(query,
+            function (err, rows) {
+                if (err) {
+                    Exporter.error(err);
+                    return callback(err);
+                }
+                getTopicsMainPids(function(err, mpids) {
+                    //normalize here
+                    var map = {};
+                    rows.forEach(function (row) {
+                        // make it's not a topic
+                        if (! mpids[row._pid]) {
+                            row._content = row._content || '';
+                            row._timestamp = ((row._timestamp || 0) * 1000) || startms;
+                            map[row._pid] = row;
+                        }
+                    });
 
-					callback(null, map);
-				});
-			});
+                    callback(null, map);
+                });
+            });
 
     };
 
