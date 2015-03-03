@@ -2,6 +2,7 @@
 var async = require('async');
 var mysql = require('mysql');
 var _ = require('underscore');
+var moment = require('moment');
 var noop = function(){};
 var logPrefix = '[nodebb-plugin-import-jforum]';
 
@@ -42,19 +43,9 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             + prefix + 'users.user_id as _uid, '
             + prefix + 'users.username as _username, '
             + prefix + 'users.user_email as _registrationEmail, '
-            //+ prefix + 'users.user_rank as _level, '
             + prefix + 'users.user_regdate as _joindate, '
+            + prefix + 'users.user_lastvisit as _lastonline, '
             + prefix + 'users.user_email as _email '
-            //+ prefix + 'banlist.ban_id as _banned '
-            //+ prefix + 'USER_PROFILE.USER_SIGNATURE as _signature, '
-            //+ prefix + 'USER_PROFILE.USER_HOMEPAGE as _website, '
-            //+ prefix + 'USER_PROFILE.USER_OCCUPATION as _occupation, '
-            //+ prefix + 'USER_PROFILE.USER_LOCATION as _location, '
-            //+ prefix + 'USER_PROFILE.USER_AVATAR as _picture, '
-            //+ prefix + 'USER_PROFILE.USER_TITLE as _title, '
-            //+ prefix + 'USER_PROFILE.USER_RATING as _reputation, '
-            //+ prefix + 'USER_PROFILE.USER_TOTAL_RATES as _profileviews, '
-            //+ prefix + 'USER_PROFILE.USER_BIRTHDAY as _birthday '
 
             + 'FROM ' + prefix + 'users '
             + 'WHERE ' + prefix + 'users.user_id = ' + prefix + 'users.user_id '
@@ -81,8 +72,11 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
                     // keeping it HTML see https://github.com/akhoury/nodebb-plugin-import#markdown-note
                     row._signature = Exporter.truncateStr(row._signature || '', 150);
 
-                    // from unix timestamp (s) to JS timestamp (ms)
-                    row._joindate = ((row._joindate || 0) * 1000) || startms;
+                    row._joindate = row._joindate ? moment(row._joindate).toDate().getTime() : startms;
+
+                    if (row._lastonline) {
+                        row._lastonline = moment(row._lastonline).toDate().getTime();
+                    }
 
                     // lower case the email for consistency
                     row._email = (row._email || '').toLowerCase();
@@ -132,7 +126,6 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
                 rows.forEach(function(row) {
                     row._name = row._name || 'Untitled Category';
                     row._description = row._description || 'No decsciption available';
-                    row._timestamp = ((row._timestamp || 0) * 1000) || startms;
 
                     map[row._cid] = row;
                 });
@@ -199,7 +192,7 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
                 var map = {};
                 rows.forEach(function(row) {
                     row._title = row._title ? row._title[0].toUpperCase() + row._title.substr(1) : 'Untitled';
-                    row._timestamp = ((row._timestamp || 0) * 1000) || startms;
+                    row._timestamp = row._timestamp ? moment(row._timestamp).toDate().getTime() : startms;
 
                     map[row._tid] = row;
                 });
@@ -271,7 +264,7 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
                         // make sure it's not a topic main post
                         if (! mpids[row._pid]) {
                             row._content = row._content || '';
-                            row._timestamp = ((row._timestamp || 0) * 1000) || startms;
+                            row._timestamp = row._timestamp ? moment(row._timestamp).toDate().getTime() : startms;
                             map[row._pid] = row;
                         }
                     });
