@@ -99,7 +99,7 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
     };
 
     Exporter.getCategories = function(callback) {
-        return Exporter.getPaginatedCategories(0, -1, callback);    
+        return Exporter.getPaginatedCategories(0, -1, callback);
     };
     Exporter.getPaginatedCategories = function(start, limit, callback) {
         callback = !_.isFunction(callback) ? noop : callback;
@@ -113,7 +113,7 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             + prefix + 'forums.forum_desc as _description '
             + 'FROM ' + prefix + 'forums '
             +  (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
-            
+
         if (!Exporter.connection) {
             err = {error: 'MySQL connection is not setup. Run setup(config) first'};
             Exporter.error(err.error);
@@ -174,9 +174,11 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             // and there is the content I need !!
             + prefix + 'topics.topic_title as _title, '
             + prefix + 'posts_text.post_text as _content '
-            + 'FROM ' + prefix + 'topics, ' + prefix + 'posts, ' + prefix + 'posts_text '
-            // see
-            + 'WHERE ' + prefix + 'topics.topic_first_post_id=' + prefix + 'posts.post_id '
+            + 'FROM ' + prefix + 'topics '
+
+			+ 'LEFT JOIN ' + prefix + 'posts ON ' + prefix + 'posts.post_id=' + prefix + 'topics.topic_first_post_id '
+			+ 'LEFT JOIN ' + prefix + 'posts_text ON ' + prefix + 'posts_text.post_id=' + prefix + 'topics.topic_first_post_id '
+
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
 
@@ -206,6 +208,7 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             });
     };
 
+	// todo: I dont like this, potential memory issues
     var getTopicsMainPids = function(callback) {
         if (Exporter._topicsMainPids) {
             return callback(null, Exporter._topicsMainPids);
@@ -221,9 +224,11 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             callback(null, Exporter._topicsMainPids);
         });
     };
+
     Exporter.getPosts = function(callback) {
         return Exporter.getPaginatedPosts(0, -1, callback);
     };
+
     Exporter.getPaginatedPosts = function(start, limit, callback) {
         callback = !_.isFunction(callback) ? noop : callback;
 
@@ -231,17 +236,19 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
         var prefix = Exporter.config('prefix');
         var startms = +new Date();
         var query =
-            'SELECT ' + prefix + 'posts.post_id as _pid, '
-            //+ 'POST_PARENT_ID as _post_replying_to, ' phpbb doesn't have "reply to another post"
+            'SELECT '
+
+			+ prefix + 'posts.post_id as _pid, '
+			+ prefix + 'posts.poster_ip as _ip, '
             + prefix + 'posts.topic_id as _tid, '
             + prefix + 'posts.post_time as _timestamp, '
+            + prefix + 'posts.user_id as _uid, '
+			+ prefix + 'posts_text.post_text as _content '
 
-            + prefix + 'posts_text.post_text as _content, '
-            + prefix + 'posts.poster_id as _uid, '
+            + 'FROM ' + prefix + 'posts '
+			+ 'LEFT JOIN ' + prefix + 'posts_text ON ' + prefix + 'posts_text.post_id=' + prefix + 'posts.post_id '
 
-            + 'FROM ' + prefix + 'posts, ' + prefix + 'posts_text '
-
-            // the ones that are topics main posts are filtered below
+			// the ones that are topics main posts are filtered below
             + 'WHERE ' + prefix + 'posts.topic_id > 0 '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
@@ -261,7 +268,7 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
                     //normalize here
                     var map = {};
                     rows.forEach(function (row) {
-                        // make it's not a topic
+                        // make sure it's not a topic main post
                         if (! mpids[row._pid]) {
                             row._content = row._content || '';
                             row._timestamp = ((row._timestamp || 0) * 1000) || startms;
@@ -305,7 +312,7 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             }
         ], callback);
     };
-    
+
     Exporter.paginatedTestrun = function(config, callback) {
         async.series([
             function(next) {
