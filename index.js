@@ -236,13 +236,22 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
             + prefix + 'posts.topic_id as _tid, '
             + prefix + 'posts.post_time as _timestamp, '
             + prefix + 'posts.user_id as _uid, '
-			+ prefix + 'posts_text.post_text as _content '
+            + 'concat(' + prefix + 'posts_text.post_text, "\n\n Attachment: [download link](", ' + prefix + 'attach_desc.physical_filename, ")") as _content '
 
-            + 'FROM ' + prefix + 'posts '
-			+ 'LEFT JOIN ' + prefix + 'posts_text ON ' + prefix + 'posts_text.post_id=' + prefix + 'posts.post_id '
+            + 'FROM ' + prefix + 'posts, '
+            + prefix + 'posts_text, '
+            + prefix + 'attach_desc, '
+            + prefix + 'attach '
+			//+ 'LEFT JOIN ' + prefix + 'posts_text ON ' + prefix + 'posts_text.post_id=' + prefix + 'posts.post_id '
 
 			// the ones that are topics main posts are filtered below
             + 'WHERE ' + prefix + 'posts.topic_id > 0 '
+
+            + 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT topic_first_post_id from ' + prefix + 'topics) '
+
+            + 'AND ' + prefix + 'posts_text.post_id = ' + prefix + 'posts.post_id '
+            + 'AND (' + prefix + 'posts.post_id = ' + prefix + 'attach.post_id '
+                + 'AND ' + prefix + 'attach.attach_id = ' + prefix + 'attach_desc.attach_id) '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
         if (!Exporter.connection) {
