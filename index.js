@@ -5,7 +5,7 @@ var _ = require('underscore');
 var moment = require('moment');
 var noop = function(){};
 var logPrefix = '[nodebb-plugin-import-jforum]';
-var utils = module.parent.main.require('./public/src/utils');
+var utils = require('../../public/src/utils');
 
 (function(Exporter) {
 
@@ -257,6 +257,30 @@ var utils = module.parent.main.require('./public/src/utils');
             + 'AND ' + prefix + 'posts_text.post_id = ' + prefix + 'posts.post_id '
             + 'AND (' + prefix + 'posts.post_id = ' + prefix + 'attach.post_id '
                 + 'AND ' + prefix + 'attach.attach_id = ' + prefix + 'attach_desc.attach_id) '
+
+            ///
+            + 'UNION '
+            ///
+
+            + 'SELECT '
+
+            + prefix + 'posts.post_id as _pid, '
+            + prefix + 'posts.poster_ip as _ip, '
+            + prefix + 'posts.topic_id as _tid, '
+            + prefix + 'posts.post_time as _timestamp, '
+            + prefix + 'posts.user_id as _uid, '
+            + prefix + 'posts_text.post_text as _content '
+
+            + 'FROM ' + prefix + 'posts, '
+            + prefix + 'posts_text '
+            
+            + 'WHERE ' + prefix + 'posts.topic_id > 0 '
+
+            + 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT topic_first_post_id from ' + prefix + 'topics) '
+
+            + 'AND ' + prefix + 'posts_text.post_id = ' + prefix + 'posts.post_id '
+            + 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT post_id from ' + prefix + 'attach) '
+
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
         if (!Exporter.connection) {
