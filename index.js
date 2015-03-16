@@ -5,6 +5,7 @@ var _ = require('underscore');
 var moment = require('moment');
 var noop = function(){};
 var logPrefix = '[nodebb-plugin-import-jforum]';
+var utils = module.parent.main.require('./public/src/utils');
 
 (function(Exporter) {
 
@@ -80,6 +81,10 @@ var logPrefix = '[nodebb-plugin-import-jforum]';
 
                     // lower case the email for consistency
                     row._email = (row._email || '').toLowerCase();
+
+                    if (!utils.isEmailValid(row._email)) {
+                        row._email = utils.generateUUID() + '@none.com';
+                    }
 
                     // I don't know about you about I noticed a lot my users have incomplete urls, urls like: http://
                     row._picture = Exporter.validateUrl(row._picture);
