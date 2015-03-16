@@ -234,35 +234,8 @@ var utils = require('../../public/src/utils');
         var prefix = Exporter.config('prefix');
         var startms = +new Date();
         var query =
+
             'SELECT '
-
-			+ prefix + 'posts.post_id as _pid, '
-			+ prefix + 'posts.poster_ip as _ip, '
-            + prefix + 'posts.topic_id as _tid, '
-            + prefix + 'posts.post_time as _timestamp, '
-            + prefix + 'posts.user_id as _uid, '
-            + 'concat(' + prefix + 'posts_text.post_text, "\n\n Attachment: [download link](", ' + prefix + 'attach_desc.physical_filename, ")") as _content '
-
-            + 'FROM ' + prefix + 'posts, '
-            + prefix + 'posts_text, '
-            + prefix + 'attach_desc, '
-            + prefix + 'attach '
-			//+ 'LEFT JOIN ' + prefix + 'posts_text ON ' + prefix + 'posts_text.post_id=' + prefix + 'posts.post_id '
-
-			// the ones that are topics main posts are filtered below
-            + 'WHERE ' + prefix + 'posts.topic_id > 0 '
-
-            + 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT topic_first_post_id from ' + prefix + 'topics) '
-
-            + 'AND ' + prefix + 'posts_text.post_id = ' + prefix + 'posts.post_id '
-            + 'AND (' + prefix + 'posts.post_id = ' + prefix + 'attach.post_id '
-                + 'AND ' + prefix + 'attach.attach_id = ' + prefix + 'attach_desc.attach_id) '
-
-            ///
-            + 'UNION '
-            ///
-
-            + 'SELECT '
 
             + prefix + 'posts.post_id as _pid, '
             + prefix + 'posts.poster_ip as _ip, '
@@ -276,10 +249,36 @@ var utils = require('../../public/src/utils');
             
             + 'WHERE ' + prefix + 'posts.topic_id > 0 '
 
-            + 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT topic_first_post_id from ' + prefix + 'topics) '
+            //+ 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT topic_first_post_id from ' + prefix + 'topics) '
 
             + 'AND ' + prefix + 'posts_text.post_id = ' + prefix + 'posts.post_id '
             + 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT post_id from ' + prefix + 'attach) '
+
+            ///
+            + 'UNION '
+            ///
+
+            + 'SELECT '
+
+            + prefix + 'posts.post_id as _pid, '
+            + prefix + 'posts.poster_ip as _ip, '
+            + prefix + 'posts.topic_id as _tid, '
+            + prefix + 'posts.post_time as _timestamp, '
+            + prefix + 'posts.user_id as _uid, '
+            + 'concat(' + prefix + 'posts_text.post_text, "\n\n Attachment: [download link](http://archive.infiniteautomation.com/forum/posts/downloadAttach/", ' + prefix + 'attach.attach_id, ".page)") as _content '
+
+            + 'FROM ' + prefix + 'posts, '
+            + prefix + 'posts_text, '
+            + prefix + 'attach '
+            //+ 'LEFT JOIN ' + prefix + 'posts_text ON ' + prefix + 'posts_text.post_id=' + prefix + 'posts.post_id '
+
+            // the ones that are topics main posts are filtered below
+            + 'WHERE ' + prefix + 'posts.topic_id > 0 '
+
+            //+ 'AND ' + prefix + 'posts_text.post_id NOT IN (SELECT topic_first_post_id from ' + prefix + 'topics) '
+
+            + 'AND ' + prefix + 'posts_text.post_id = ' + prefix + 'posts.post_id '
+            + 'AND (' + prefix + 'posts.post_id = ' + prefix + 'attach.post_id) '
 
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
